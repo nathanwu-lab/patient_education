@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Treatment Handout Builder</title>
+  <link rel="stylesheet" href="styles.css?v=28" />
+  <script defer src="app.js?v=28"></script>
+</head>
+<body>
+  <header>
+    <h1>Treatment Handout Builder</h1>
+    <div class="header-controls">
+      <label for="languageSelect">Language:</label>
+      <select id="languageSelect">
+        <option value="english">English</option>
+        <option value="spanish">Spanish</option>
+        <option value="chinese">Chinese</option>
+        <option value="simple">Simple (Numbers)</option>
+      </select>
+    </div>
+  </header>
+
+  <main class="layout">
+    <!-- Left Column: Medication List -->
+    <section class="medication-list">
+      <h2>Medications</h2>
+      <div class="medication-scroll">
+        <div id="medicationButtons"></div>
+      </div>
+    </section>
+
+    <!-- Middle Column: Form Controls -->
+    <section class="controls">
+      <div class="medication-entry">
+        <label for="medSearch">Selected Medication</label>
+        <input id="medSearch" placeholder="Search or pick a medication..." autocomplete="off" />
+
+        <label>Directions</label>
+        <div class="directions-form">
+          <div class="directions-row">
+            <label for="dose">Dose (optional):</label>
+            <input type="text" id="dose" placeholder="e.g., 1 drop, 500mg, 1 tablet" />
+          </div>
+          <div class="directions-row">
+            <label for="frequency">Frequency:</label>
+            <select id="frequency">
+              <option value="">Select frequency</option>
+              <option value="QD">QD (Once daily)</option>
+              <option value="BID">BID (Twice daily)</option>
+              <option value="TID">TID (Three times daily)</option>
+              <option value="QID">QID (Four times daily)</option>
+              <option value="QHS">QHS (At bedtime)</option>
+              <option value="custom">QxH (Every X hours)</option>
+              <option value="other">Other (custom)</option>
+            </select>
+          </div>
+          <div class="directions-row" id="customHoursRow" style="display: none;">
+            <label for="customHours">Every:</label>
+            <input type="number" id="customHours" placeholder="6" min="1" max="24" />
+            <span>hours</span>
+          </div>
+          <div class="directions-row" id="otherRow" style="display: none;">
+            <label for="otherDirections">Custom:</label>
+            <input type="text" id="otherDirections" placeholder="Enter custom directions" />
+          </div>
+        </div>
+
+        <label>Eye Selection</label>
+        <div class="eye-selection">
+          <button type="button" class="eye-btn" data-eye="right">Right Eye</button>
+          <button type="button" class="eye-btn" data-eye="left">Left Eye</button>
+          <button type="button" class="eye-btn" data-eye="both">Both Eyes</button>
+        </div>
+
+        <label for="notes">Notes / Warnings</label>
+        <textarea id="notes" rows="3" placeholder="e.g., Stop if rash occurs. Return if symptoms worsen."></textarea>
+
+        <button id="addMedBtn" type="button" class="primary">Add Medication to Plan</button>
+      </div>
+
+      <div class="actions">
+        <button id="clearBtn" type="button">Clear All</button>
+        <button id="printBtn" type="button" class="primary">Print Treatment Plan</button>
+      </div>
+    </section>
+
+    <!-- Right Column: Treatment Plan -->
+    <section class="handout" id="handout">
+      <h2>Patient Treatment Plan</h2>
+      <div id="handoutContent">
+        <div class="empty-handout">
+          <p>Add medications to see your treatment plan here.</p>
+        </div>
+      </div>
+
+      <footer class="handout-footer">
+        <div>Date: <span id="today"></span></div>
+        <div class="small">This guide is for patient education and does not replace medical advice.</div>
+      </footer>
+    </section>
+  </main>
+</body>
+</html>
+
+

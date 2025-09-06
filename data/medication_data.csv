@@ -1,0 +1,62 @@
+Medication,Type,Default Directions,Common side effects (not exhaustive)
+Tobramycin-dexamethasone ointment,ointment,BID,Blurred vision; steroid risks
+Neomycin-polymyxin-dexamethasone ointment (Maxitrol),ointment,BID,Same as above; blurred vision
+Systane ointment,ointment,QHS,Blurred vision
+Sodium chloride 5% ointment (Muro 128),ointment,QHS,Irritation; blurred vision
+Erythromycin ophthalmic ointment,ointment,QHS,Blurred vision; minor irritation
+Ganciclovir (Zirgan) gel,eye drop,,Blurred vision; eye irritation
+Timolol-dorzolamide (Cosopt),eye drop,BID,Combines both: stinging/bitter taste + beta-blocker systemic effects
+Brimonidine-Timolol (Combigan),eye drop,BID,"Redness, dry mouth, fatigue; beta-blocker systemic effects"
+Ketotifen,eye drop,BID,Transient burning/stinging
+Cyclopentolate 1% (Cyclogyl),eye drop,BID,"Blurred vision, photophobia; anticholinergic effects (rare systemic)"
+Oxervate (cenegermin),eye drop,Q2h,"Eye pain, redness; tearing"
+Xiidra (lifitegrast),eye drop,BID,Burning/irritation; unusual taste (dysgeusia); reduced visual acuity
+Cequa (cyclosporine 0.09%),eye drop,BID,Burning/stinging; redness
+Vevye (cyclosporine 0.1%),eye drop,BID,Burning/stinging; blurred vision
+Restasis (cyclosporine 0.05%),eye drop,BID,Burning/stinging; redness
+Miebo (perfluorohexyloctane),eye drop,QID,Blurred vision; transient irritation
+Polymyxin-trimethoprim (Polytrim),eye drop,Q3h,Irritation; burning
+Pataday (olopatadine 0.2-0.7%),eye drop,QD,Transient burn/sting; headache
+Prolensa (bromfenac),eye drop,QD,Irritation; delayed healing (rare)
+Timolol 0.25-0.5%,eye drop,QD,"Bradycardia, hypotension, bronchospasm, fatigue (avoid in asthma/COPD, heart block)"
+Atropine 1%,eye drop,QD,"Photophobia, blurred near vision; systemic anticholinergic effects"
+Latanoprost 0.005%,eye drop,QHS,"Iris/eyelash darkening, eyelash growth, conjunctival hyperemia"
+Netarsudil-latanoprost (Rocklatan),eye drop,QHS,"Conjunctival hyperemia, corneal verticillata, irritation; prostaglandin effects"
+Netarsudil (Rhopressa),eye drop,QHS,"Conjunctival hyperemia, corneal verticillata, instillation site pain"
+Vyzulta (latanoprostene bunod),eye drop,QHS,"Redness, eyelash changes, increased iris pigmentation"
+Ketorolac 0.5%,eye drop,QID,Stinging; delayed corneal healing (avoid in epithelial defects)
+Pilocarpine (ophthalmic 1%),eye drop,QID,"Brow ache, miosis, blurred/night vision issues"
+Loteprednol (Lotemax),eye drop,QID,"IOP rise (less than other steroids), irritation"
+Eysuvis (loteprednol 0.25%),eye drop,QID,Transient burning; IOP rise (rare)
+Fluorometholone (Flarex/FML),eye drop,QID,"Increased IOP, cataract risk; infection masking"
+Prednisolone acetate (Pred Forte),eye drop,QID,"Increased IOP, cataract risk; infection masking"
+Dexamethasone (ophthalmic),eye drop,QID,"Increased IOP, cataract risk"
+Difluprednate (Durezol),eye drop,QID,High risk of IOP rise; cataract progression
+Brinzolamide-Brimonidine (Simbrinza),eye drop,TID,"Stinging, blurred vision, bad taste; fatigue"
+Dorzolamide 2%,eye drop,TID,Stinging; bitter taste; allergic reactions
+Brimonidine 0.2%/0.15%,eye drop,TID,"Allergic conjunctivitis, dry mouth, fatigue, drowsiness"
+Moxifloxacin (Vigamox),eye drop,TID,Irritation; bitter taste (rare)
+Preservative Free Refresh Tears,eye drop,QID,Temporary blur or stinging
+Refresh Tears,eye drop,QID,Temporary blur or stinging
+Refresh Gel Drops,eye drop,QHS,Temporary blur
+Ofloxacin (Ocuflox),eye drop,Q2h,Irritation; photophobia
+Tobramycin (ophthalmic),eye drop,Q4h,Irritation; hypersensitivity
+Tobramycin-dexamethasone drops,eye drop,,"IOP elevation (steroid), irritation"
+Sodium chloride 5% drop (Muro 128),eye drop,QID,Stinging/burning
+Neomycin-polymyxin-dexamethasone drops (Maxitrol),eye drop,,Increased IOP/cataract risk (steroid); allergy; irritation
+,,,
+Omeprazole,pill,QD,"Headache; long-term: B12/magnesium deficiency, C. difficile risk"
+Naproxen (OTC 220 mg),pill,Q8h,"GI upset/bleed, kidney risk; avoid with ulcers/CKD"
+Diamox (acetazolamide),pill,QID,"Paresthesias, fatigue, metabolic acidosis, kidney stones; sulfa allergy caution"
+Doxycycline,pill,QD,"GI upset, photosensitivity; esophagitis-take with water, remain upright"
+AREDS II vitamins,pill,,GI upset; smokers should avoid beta-carotene formulations
+Bactrim DS (800/160 mg),pill,BID,"Rash (incl. SJS), GI upset, photosensitivity; avoid in sulfa allergy"
+,,,
+Tacrolimus (topical 0.03-0.1%),,BID,Burning; infection risk; photosensitivity
+,,,
+Warm Compresses,,QHS,Skin redness/irritation if too hot
+Ocusoft lid wipes,,BID,Mild irritation
+Valacyclovir (Valtrex),,,"Headache, nausea; kidney issues if dehydrated/renal disease"
+Stop Smoking (counseling),,,"NRT: skin irritation, nausea; bupropion/varenicline have specific risks"
+Moisture goggles,,,Pressure marks; mild discomfort
+Warm Compresses (towel),,QHS,Same as above
