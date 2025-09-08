@@ -11,19 +11,54 @@ const state = {
 // Fallback data so the app works even when opened directly via file://
 const DEFAULT_MEDS = [
   {
-    name: 'Amoxicillin 500 mg',
-    image: 'images/amoxicillin-500.png',
-    aliases: ['Amox 500', 'Amoxicillin']
+    name: 'Brimonidine',
+    image: 'images/Brimonidine.jpg',
+    aliases: []
   },
   {
-    name: 'Ibuprofen 200 mg',
-    image: 'images/ibuprofen-200.png',
-    aliases: ['Advil 200', 'Motrin 200', 'Ibuprofen']
+    name: 'Timolol',
+    image: 'images/Timolol.jpg',
+    aliases: []
   },
   {
-    name: 'Metformin 500 mg',
-    image: 'images/metformin-500.png',
-    aliases: ['Glucophage 500', 'Metformin']
+    name: 'Latanoprost',
+    image: 'images/Latanoprost.jpg',
+    aliases: []
+  },
+  {
+    name: 'Restasis',
+    image: 'images/Restasis.webp',
+    aliases: []
+  },
+  {
+    name: 'Xiidra',
+    image: 'images/Xiidra.png',
+    aliases: []
+  },
+  {
+    name: 'Ketorolac',
+    image: 'images/Ketorolac.avif',
+    aliases: []
+  },
+  {
+    name: 'Prolensa',
+    image: 'images/Prolensa.jpg',
+    aliases: []
+  },
+  {
+    name: 'Tobramycin',
+    image: 'images/Tobramycin.avif',
+    aliases: []
+  },
+  {
+    name: 'Moxifloxacin (vigamox)',
+    image: 'images/Moxifloxacin (Vigamox).webp',
+    aliases: []
+  },
+  {
+    name: 'Refresh Tears',
+    image: 'images/Refresh Tears.avif',
+    aliases: []
   }
 ];
 
