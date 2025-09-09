@@ -315,10 +315,16 @@ button.primary { background: var(--brand); color: white; border-color: var(--bra
 
 /* Print */
 @media print {
-  header, .controls { display: none !important; }
+  header, .controls, .medication-list { display: none !important; }
   .layout { display: block; padding: 0; }
   body { background: white; }
-  .handout { border: none; border-radius: 0; padding: 0; }
+  .handout { 
+    border: none; 
+    border-radius: 0; 
+    padding: 20px; 
+    width: 100%; 
+    height: auto;
+  }
   
   .remove-med-handout { display: none !important; }
   
