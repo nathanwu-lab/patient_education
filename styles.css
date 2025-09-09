@@ -522,6 +522,23 @@ button.primary { background: var(--brand); color: white; border-color: var(--bra
   box-shadow: 0 0 0 2px rgba(21, 94, 239, 0.2);
 }
 
+.eye-letter.clickable {
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.eye-letter.clickable:hover {
+  background: #e0e7ff;
+  border-color: var(--brand);
+  transform: scale(1.1);
+}
+
+.eye-letter.clickable.circled:hover {
+  background: #0d4bc4;
+  transform: scale(1.1);
+}
+
 .loading {
   text-align: center;
   padding: 40px 20px;

@@ -123,6 +123,13 @@ const medicationNameMapping = {
   'Neomycin-polymyxin-dexamethasone ointment (Maxitrol)': 'Neomycin Polymyxin Dexamethasone Ointment (maxitrol)',
   'Sodium chloride 5% ointment (Muro 128)': 'Sodium Chloride 5% Ointment (muro)',
   'Erythromycin ophthalmic ointment': 'Erythromycin Ointment',
+  'Systane ointment': 'Systane Ointment',
+  'Dexamethasone (ophthalmic)': 'Dexamethasone',
+  'Dorzolamide 2%': 'Dorzolamide',
+  'Fluorometholone (Flarex/FML)': 'Fluoromethalone (flarex)',
+  'Prednisolone acetate (Pred Forte)': 'Prednisolone Acetate (pred Forte)',
+  'Sodium chloride 5% drop (Muro 128)': 'Sodium Chloride 5% Drop (muro)',
+  'Tobramycin (ophthalmic)': 'Tobramycin',
   
   // Pills
   'Valacyclovir (Valtrex)': 'Valacyclovir (valtrex)',
@@ -772,6 +779,54 @@ function removeMedicationFromPlan(id) {
   persist();
 }
 
+function toggleEyeSelection(medicationId, eye) {
+  console.log('toggleEyeSelection called with:', medicationId, eye);
+  console.log('Current treatment plan:', state.treatmentPlan);
+  
+  // Find the medication in the treatment plan
+  const medication = state.treatmentPlan.find(med => med.id === medicationId);
+  if (!medication) {
+    console.error('Medication not found:', medicationId);
+    return;
+  }
+  
+  // Get current eye selection
+  const currentEye = medication.selectedEye;
+  
+  // Toggle logic
+  let newEyeSelection;
+  if (eye === 'right') {
+    if (currentEye === 'right') {
+      newEyeSelection = null; // Deselect right
+    } else if (currentEye === 'left') {
+      newEyeSelection = 'both'; // Add right to left = both
+    } else if (currentEye === 'both') {
+      newEyeSelection = 'left'; // Remove right from both = left
+    } else {
+      newEyeSelection = 'right'; // Select right
+    }
+  } else if (eye === 'left') {
+    if (currentEye === 'left') {
+      newEyeSelection = null; // Deselect left
+    } else if (currentEye === 'right') {
+      newEyeSelection = 'both'; // Add left to right = both
+    } else if (currentEye === 'both') {
+      newEyeSelection = 'right'; // Remove left from both = right
+    } else {
+      newEyeSelection = 'left'; // Select left
+    }
+  }
+  
+  // Update the medication
+  medication.selectedEye = newEyeSelection;
+  
+  console.log('Updated eye selection:', newEyeSelection);
+  
+  // Update the display and save
+  updateHandoutDisplay();
+  persist();
+}
+
 function updateTreatmentPlanDisplay() {
   const container = $('#medicationList');
   
@@ -846,10 +901,25 @@ async function updateHandoutDisplay() {
             </div>
           ` : ''}
         </div>
+        ${(() => {
+          // Check if this is an eye medication
+          const medData = state.medicationData[med.name];
+          const isEyeMedication = medData && (medData.type === 'eye_drop' || medData.type === 'eye_ointment');
+          return isEyeMedication ? `
         <div class="eye-indicators">
-          <span class="eye-letter ${med.selectedEye === 'right' || med.selectedEye === 'both' ? 'circled' : ''}">R</span>
-          <span class="eye-letter ${med.selectedEye === 'left' || med.selectedEye === 'both' ? 'circled' : ''}">L</span>
+          <span class="eye-letter clickable ${med.selectedEye === 'right' || med.selectedEye === 'both' ? 'circled' : ''}" 
+                onclick="toggleEyeSelection(${med.id}, 'right')" 
+                title="Click to toggle right eye"
+                data-med-id="${med.id}"
+                data-eye="right">R</span>
+          <span class="eye-letter clickable ${med.selectedEye === 'left' || med.selectedEye === 'both' ? 'circled' : ''}" 
+                onclick="toggleEyeSelection(${med.id}, 'left')" 
+                title="Click to toggle left eye"
+                data-med-id="${med.id}"
+                data-eye="left">L</span>
         </div>
+          ` : '';
+        })()}
         <button class="remove-med-handout" onclick="removeMedicationFromPlan(${med.id})" title="Remove" style="background: red; color: white; border: none; border-radius: 50%; width: 32px; height: 32px; position: absolute; top: 8px; right: 8px; cursor: pointer; font-size: 18px; font-weight: bold; z-index: 1000;">×</button>
       </div>
     </div>
