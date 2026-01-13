@@ -8,60 +8,6 @@ const state = {
   selectedLanguage: 'english'
 };
 
-// Fallback data so the app works even when opened directly via file://
-const DEFAULT_MEDS = [
-  {
-    name: 'Brimonidine',
-    image: 'images/Brimonidine.jpg',
-    aliases: []
-  },
-  {
-    name: 'Timolol',
-    image: 'images/Timolol.jpg',
-    aliases: []
-  },
-  {
-    name: 'Latanoprost',
-    image: 'images/Latanoprost.jpg',
-    aliases: []
-  },
-  {
-    name: 'Restasis',
-    image: 'images/Restasis.webp',
-    aliases: []
-  },
-  {
-    name: 'Xiidra',
-    image: 'images/Xiidra.png',
-    aliases: []
-  },
-  {
-    name: 'Ketorolac',
-    image: 'images/Ketorolac.avif',
-    aliases: []
-  },
-  {
-    name: 'Prolensa',
-    image: 'images/Prolensa.jpg',
-    aliases: []
-  },
-  {
-    name: 'Tobramycin',
-    image: 'images/Tobramycin.avif',
-    aliases: []
-  },
-  {
-    name: 'Moxifloxacin (vigamox)',
-    image: 'images/Moxifloxacin (Vigamox).webp',
-    aliases: []
-  },
-  {
-    name: 'Refresh Tears',
-    image: 'images/Refresh Tears.avif',
-    aliases: []
-  }
-];
-
 const $ = (sel) => document.querySelector(sel);
 
 // Function to parse CSV data
@@ -178,9 +124,7 @@ async function loadMedicationData() {
       }
     });
     
-    console.log('Loaded medication data:', state.medicationData);
   } catch (err) {
-    console.warn('Could not load medication data CSV:', err);
     state.medicationData = {};
   }
 }
@@ -210,9 +154,7 @@ async function loadTranslations() {
       }
     });
     
-    console.log('Loaded translations:', state.translations);
   } catch (err) {
-    console.warn('Could not load translations CSV:', err);
     state.translations = {};
   }
 }
@@ -226,15 +168,13 @@ function setToday() {
 }
 
 async function loadMedications() {
-  // Try to load from data/medications.json; if that fails (e.g., file:// CORS), fallback to DEFAULT_MEDS
   try {
     const res = await fetch('data/medications.json?_=' + Date.now());
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const list = await res.json();
     applyMedications(list);
   } catch (err) {
-    console.warn('Using built-in medication list fallback. To customize, edit data/medications.json.', err);
-    applyMedications(DEFAULT_MEDS);
+    // Failed to load medications
   }
 }
 
@@ -406,29 +346,21 @@ function parseMedicalAbbreviation(directions) {
 function translateText(text, language) {
   if (!text || language === 'english') return text;
   
-  console.log(`Translating "${text}" to ${language}`);
   const translation = state.translations[text.toLowerCase()];
-  console.log('Found translation:', translation);
   
   if (translation && translation[language]) {
-    console.log(`Translated "${text}" to "${translation[language]}"`);
     return translation[language];
   }
   
-  // If no translation found, return original text
-  console.log(`No translation found for "${text}", returning original`);
   return text;
 }
 
 function translateDirections(directions, language) {
   if (!directions || language === 'english') return directions;
   
-  console.log(`Translating directions: "${directions}" to ${language}`);
-  
   // First try to translate the entire phrase
   const fullTranslation = state.translations[directions.toLowerCase()];
   if (fullTranslation && fullTranslation[language]) {
-    console.log(`Found full phrase translation: "${directions}" -> "${fullTranslation[language]}"`);
     return fullTranslation[language];
   }
   
@@ -436,15 +368,11 @@ function translateDirections(directions, language) {
   const parts = directions.split(/\s+/);
   const translatedParts = parts.map(part => translateText(part, language));
   
-  const result = translatedParts.join(' ');
-  console.log(`Word-by-word translation result: "${result}"`);
-  return result;
+  return translatedParts.join(' ');
 }
 
 async function translateNotesWithAI(notes, language) {
   if (!notes || language === 'english') return notes;
-  
-  console.log(`Translating notes with AI: "${notes}" to ${language}`);
   
   try {
     // Map our language codes to Google Translate language codes
@@ -461,7 +389,6 @@ async function translateNotesWithAI(notes, language) {
     const response = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=${targetLang}&dt=t&q=${encodeURIComponent(notes)}`);
     
     if (!response.ok) {
-      console.error(`Google Translate API failed with status: ${response.status}`);
       return notes;
     }
     
@@ -469,34 +396,23 @@ async function translateNotesWithAI(notes, language) {
     const translatedNotes = data[0][0][0];
     
     if (translatedNotes && translatedNotes !== notes) {
-      console.log(`AI translation success: "${notes}" -> "${translatedNotes}"`);
       return translatedNotes;
     }
     
     return notes;
     
   } catch (error) {
-    console.error('AI translation failed:', error);
     return notes;
   }
 }
 
 function reconstructDirectionsFromOriginal(med, language) {
-  console.log('Reconstructing directions for medication:', med.name);
-  console.log('Original data:', {
-    dose: med.originalDose,
-    frequency: med.originalFrequency,
-    customHours: med.originalCustomHours,
-    otherDirections: med.originalOtherDirections
-  });
-  
   const dose = med.originalDose || '';
   const frequency = med.originalFrequency || '';
   const customHours = med.originalCustomHours || '';
   const otherDirections = med.originalOtherDirections || '';
   
   if (!dose && !frequency && !otherDirections) {
-    console.log('No original data found, returning empty');
     return '';
   }
   
@@ -523,16 +439,11 @@ function reconstructDirectionsFromOriginal(med, language) {
     directions += ` ${frequencyText[frequency] || frequency}`;
   }
   
-  console.log('Reconstructed directions:', directions.trim());
-  
   // Translate the directions based on selected language
-  const translatedDirections = translateDirections(directions.trim(), language);
-  console.log('Final translated directions:', translatedDirections);
-  return translatedDirections;
+  return translateDirections(directions.trim(), language);
 }
 
 function updateSelection(med) {
-  console.log('updateSelection called with:', med);
   state.selected = med;
   
   // Clear form first
@@ -544,12 +455,9 @@ function updateSelection(med) {
   const medData = state.medicationData[med.name];
   
   if (medData) {
-    console.log('Found medication data:', medData);
-    
     // Auto-populate directions if available
     if (medData.directions) {
       const parsedDirections = parseMedicalAbbreviation(medData.directions);
-      console.log('Parsed directions:', parsedDirections);
       
       const frequencyEl = $('#frequency');
       if (frequencyEl) {
@@ -568,14 +476,6 @@ function updateSelection(med) {
             otherDirectionsEl.value = parsedDirections.customText;
           }
         }
-      }
-    }
-    
-    // Auto-populate notes with side effects if available
-    if (medData.sideEffects) {
-      const notesEl = $('#notes');
-      if (notesEl) {
-        notesEl.value = medData.sideEffects;
       }
     }
     
@@ -698,7 +598,6 @@ function getDirectionsFromForm() {
 }
 
 function selectEye(eye) {
-  console.log('Eye selected:', eye);
   state.selectedEye = eye;
   
   // Update button visual states
@@ -723,23 +622,15 @@ function getEyeText(eye) {
 
 
 function addMedicationToPlan() {
-  console.log('addMedicationToPlan called');
-  console.log('state.selected:', state.selected);
-  console.log('medSearch value:', $('#medSearch').value);
-  
   if (!state.selected) {
-    console.log('No medication selected, showing alert');
     alert('Please select a medication first.');
     return;
   }
 
   const directions = getDirectionsFromForm();
   const notes = $('#notes').value.trim();
-  
-  console.log('Form values:', { directions, notes, selectedEye: state.selectedEye });
 
   if (!directions && !notes) {
-    console.log('No form data, showing alert');
     alert('Please add at least directions or notes before adding the medication.');
     return;
   }
@@ -762,15 +653,11 @@ function addMedicationToPlan() {
     originalCustomHours: $('#customHours')?.value?.trim(),
     originalOtherDirections: $('#otherDirections')?.value?.trim()
   };
-  
-  console.log('Adding medication:', medication);
 
   state.treatmentPlan.push(medication);
   updateHandoutDisplay();
   clearMedicationForm();
   persist();
-  
-  console.log('Medication added successfully. Total in plan:', state.treatmentPlan.length);
 }
 
 function removeMedicationFromPlan(id) {
@@ -780,13 +667,9 @@ function removeMedicationFromPlan(id) {
 }
 
 function toggleEyeSelection(medicationId, eye) {
-  console.log('toggleEyeSelection called with:', medicationId, eye);
-  console.log('Current treatment plan:', state.treatmentPlan);
-  
   // Find the medication in the treatment plan
   const medication = state.treatmentPlan.find(med => med.id === medicationId);
   if (!medication) {
-    console.error('Medication not found:', medicationId);
     return;
   }
   
@@ -819,8 +702,6 @@ function toggleEyeSelection(medicationId, eye) {
   
   // Update the medication
   medication.selectedEye = newEyeSelection;
-  
-  console.log('Updated eye selection:', newEyeSelection);
   
   // Update the display and save
   updateHandoutDisplay();
@@ -861,8 +742,6 @@ async function updateHandoutDisplay() {
     return;
   }
 
-  console.log('Updating handout display with', state.treatmentPlan.length, 'medications');
-  
   // Show loading indicator if translating notes
   if (state.selectedLanguage !== 'english') {
     container.innerHTML = '<div class="loading">Translating...</div>';
@@ -927,7 +806,6 @@ async function updateHandoutDisplay() {
   }));
   
   container.innerHTML = medicationHTMLs.join('');
-  console.log('Handout HTML updated with AI translations');
 }
 
 function clearMedicationForm() {
@@ -996,21 +874,15 @@ function restore() {
 }
 
 function bind() {
-  console.log('Binding events...');
-  
   const medSearchEl = $('#medSearch');
   if (medSearchEl) {
     medSearchEl.addEventListener('change', (e) => {
-      console.log('Medication search changed:', e.target.value);
       const med = findMedByName(e.target.value);
-      console.log('Found medication:', med);
       updateSelection(med);
     });
     
     medSearchEl.addEventListener('input', (e) => {
-      console.log('Medication search input:', e.target.value);
       const med = findMedByName(e.target.value);
-      console.log('Found medication on input:', med);
       updateSelection(med);
       
       // Auto-scroll to matching medication in the list
@@ -1019,15 +891,10 @@ function bind() {
   }
   
   const addBtn = $('#addMedBtn');
-  console.log('Add button found:', addBtn);
-  
   if (addBtn) {
     addBtn.addEventListener('click', () => {
-      console.log('Add button clicked!');
       addMedicationToPlan();
     });
-  } else {
-    console.error('Add button not found!');
   }
   
   const clearBtn = $('#clearBtn');
@@ -1064,22 +931,13 @@ function bind() {
   if (languageSelect) {
     languageSelect.addEventListener('change', async (e) => {
       state.selectedLanguage = e.target.value;
-      console.log('Language changed to:', state.selectedLanguage);
-      console.log('Available translations:', state.translations);
-      console.log('Treatment plan length:', state.treatmentPlan.length);
-      
       // Update existing treatment plan with new language (including AI translation)
       await updateHandoutDisplay();
     });
-  } else {
-    console.error('Language selector not found!');
   }
-  
-  console.log('Events bound successfully');
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
-  console.log('DOM loaded, starting app...');
   setToday();
   bind();
   const medSearchEl = $('#medSearch');
@@ -1092,7 +950,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     loadTranslations()
   ]);
   restore();
-  console.log('App initialization complete');
 });
 
 
