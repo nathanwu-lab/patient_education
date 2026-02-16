@@ -11,13 +11,21 @@
   <header>
     <h1>Treatment Handout Builder</h1>
     <div class="header-controls">
-      <label for="languageSelect">Language:</label>
-      <select id="languageSelect">
-        <option value="english">English</option>
-        <option value="spanish">Spanish</option>
-        <option value="chinese">Chinese</option>
-        <option value="simple">Simple (Numbers)</option>
-      </select>
+      <div style="display: flex; gap: 10px; align-items: center;">
+        <label for="languageSelect">Language:</label>
+        <select id="languageSelect">
+          <option value="english">English</option>
+          <option value="spanish">Spanish</option>
+          <option value="chinese">Chinese</option>
+          <option value="numeric">Numeric</option>
+        </select>
+        <label for="numericLanguageSelect" id="numericLanguageLabel" style="opacity: 0.5; pointer-events: none;">Heading Language:</label>
+        <select id="numericLanguageSelect" disabled style="opacity: 0.5;">
+          <option value="english">English</option>
+          <option value="spanish">Spanish</option>
+          <option value="chinese">Chinese</option>
+        </select>
+      </div>
     </div>
   </header>
 
@@ -64,30 +72,42 @@
             <label for="otherDirections">Custom:</label>
             <input type="text" id="otherDirections" placeholder="Enter custom directions" />
           </div>
+          <div class="directions-row" id="eyeSelectionRow" style="display: none;">
+            <label>Eye:</label>
+            <div class="eye-selection">
+              <button type="button" class="eye-btn" data-eye="right">OD</button>
+              <button type="button" class="eye-btn" data-eye="left">OS</button>
+              <button type="button" class="eye-btn" data-eye="both">OU</button>
+            </div>
+          </div>
         </div>
 
-        <label>Eye Selection</label>
-        <div class="eye-selection">
-          <button type="button" class="eye-btn" data-eye="right">Right Eye</button>
-          <button type="button" class="eye-btn" data-eye="left">Left Eye</button>
-          <button type="button" class="eye-btn" data-eye="both">Both Eyes</button>
+        <!-- Saved Protocols -->
+        <div class="saved-protocols">
+          <label>Saved Protocols</label>
+          <div class="protocol-buttons">
+            <button type="button" class="protocol-btn" data-protocol="dry-eye">Dry Eye</button>
+          </div>
         </div>
 
-        <label for="notes">Notes / Warnings</label>
-        <textarea id="notes" rows="3" placeholder="e.g., Stop if rash occurs. Return if symptoms worsen."></textarea>
-
-        <button id="addMedBtn" type="button" class="primary">Add Medication to Plan</button>
+        <button id="addMedBtn" type="button">Add Medication to Plan</button>
       </div>
-
-      <div class="actions">
-        <button id="clearBtn" type="button">Clear All</button>
-        <button id="printBtn" type="button" class="primary">Print Treatment Plan</button>
+      
+      <!-- Treatment Plan List -->
+      <div class="treatment-plan-list">
+        <h3>Treatment Plan</h3>
+        <div id="treatmentPlanList">
+          <div class="empty-state">No medications added yet.</div>
+        </div>
       </div>
     </section>
 
-    <!-- Right Column: Treatment Plan -->
-    <section class="handout" id="handout">
-      <h2>Patient Treatment Plan</h2>
+    <!-- Hidden: Right Column for Print Only -->
+    <section class="handout" id="handout" style="display: none;">
+      <div class="handout-header">
+        <h2>Patient Treatment Plan</h2>
+        <button id="clearHandoutBtn" type="button" onclick="clearAll()">Clear All</button>
+      </div>
       <div id="handoutContent">
         <div class="empty-handout">
           <p>Add medications to see your treatment plan here.</p>
@@ -96,7 +116,6 @@
 
       <footer class="handout-footer">
         <div>Date: <span id="today"></span></div>
-        <div class="small">This guide is for patient education and does not replace medical advice.</div>
       </footer>
     </section>
   </main>

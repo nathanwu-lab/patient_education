@@ -17,3 +17,7 @@ BID,BID,BID,BID
 TID,TID,TID,TID
 QID,QID,QID,QID
 QHS,QHS,QHS,QHS
+left,izquierda,左,left
+right,derecha,右,right
+directions,instrucciones,用法说明,directions
+notes,notas,注意事项,notes

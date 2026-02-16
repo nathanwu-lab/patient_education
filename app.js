@@ -5,7 +5,23 @@ const state = {
   selectedEye: null,
   medicationData: {}, // Will store CSV data: {medicationName: {type, directions, sideEffects}}
   translations: {}, // Will store translation data
-  selectedLanguage: 'english'
+  selectedLanguage: 'english',
+  numericHeadingLanguage: 'english', // Language for headings when Numeric is selected
+  selectedProtocol: null // Currently selected protocol
+};
+
+// Define saved protocols
+const protocols = {
+  'dry-eye': {
+    name: 'Dry Eye',
+    medications: [
+      'Preservative Free Refresh Tears',
+      'Restasis',
+      'Vevye',
+      'Meibo',
+      'Refresh PM'
+    ]
+  }
 };
 
 const $ = (sel) => document.querySelector(sel);
@@ -145,11 +161,12 @@ async function loadTranslations() {
       const simple = row.Simple || row.simple || '';
       
       if (english) {
-        state.translations[english.toLowerCase()] = {
-          english: english,
-          spanish: spanish,
-          chinese: chinese,
-          simple: simple
+        const key = english.toLowerCase().trim();
+        state.translations[key] = {
+          english: english.trim(),
+          spanish: spanish.trim(),
+          chinese: chinese.trim(),
+          simple: simple.trim()
         };
       }
     });
@@ -348,20 +365,65 @@ function translateText(text, language) {
   
   const translation = state.translations[text.toLowerCase()];
   
-  if (translation && translation[language]) {
-    return translation[language];
+  if (translation) {
+    // Map language values to translation keys
+    const langMap = {
+      'spanish': 'spanish',
+      'chinese': 'chinese',
+      'numeric': 'simple'
+    };
+    const langKey = langMap[language];
+    
+    if (langKey && translation[langKey]) {
+      return translation[langKey];
+    }
   }
   
   return text;
 }
 
 function translateDirections(directions, language) {
-  if (!directions || language === 'english') return directions;
+  if (!directions) return directions;
+  
+  // First, convert medical abbreviations to full text if needed
+  const abbreviationMap = {
+    'QD': 'once daily',
+    'BID': 'twice daily',
+    'TID': 'three times daily',
+    'QID': 'four times daily',
+    'QHS': 'at bedtime',
+    'Q2h': 'every 2 hours',
+    'Q3h': 'every 3 hours',
+    'Q4h': 'every 4 hours',
+    'Q8h': 'every 8 hours',
+    'Q2H': 'every 2 hours',
+    'Q3H': 'every 3 hours',
+    'Q4H': 'every 4 hours',
+    'Q8H': 'every 8 hours'
+  };
+  
+  // Check if the entire directions string is just an abbreviation
+  const upperDirections = directions.toUpperCase().trim();
+  if (abbreviationMap[upperDirections]) {
+    directions = abbreviationMap[upperDirections];
+  }
+  
+  // If language is English, return the full text
+  if (language === 'english') return directions;
   
   // First try to translate the entire phrase
   const fullTranslation = state.translations[directions.toLowerCase()];
-  if (fullTranslation && fullTranslation[language]) {
-    return fullTranslation[language];
+  if (fullTranslation) {
+    const langMap = {
+      'spanish': 'spanish',
+      'chinese': 'chinese',
+      'simple': 'simple',
+      'numeric': 'simple'
+    };
+    const langKey = langMap[language];
+    if (langKey && fullTranslation[langKey]) {
+      return fullTranslation[langKey];
+    }
   }
   
   // If no full phrase translation, try word by word
@@ -376,10 +438,11 @@ async function translateNotesWithAI(notes, language) {
   
   try {
     // Map our language codes to Google Translate language codes
+    // For simple modes, content stays in English (numbers), so no translation needed
     const languageMap = {
       'spanish': 'es',
       'chinese': 'zh',
-      'simple': 'en' // Simple mode stays in English
+      'numeric': 'en' // Numeric mode stays in English (no translation)
     };
     
     const targetLang = languageMap[language];
@@ -445,6 +508,7 @@ function reconstructDirectionsFromOriginal(med, language) {
 
 function updateSelection(med) {
   state.selected = med;
+  updateAddButtonState();
   
   // Clear form first
   clearFormFields();
@@ -480,35 +544,29 @@ function updateSelection(med) {
     }
     
     // Show/hide eye selection based on medication type
+    const eyeSelectionRow = $('#eyeSelectionRow');
     const eyeSelection = document.querySelector('.eye-selection');
-    const eyeSelectionLabel = document.querySelector('label[for="eye-selection"], label:has(+ .eye-selection)');
     
-    if (eyeSelection) {
+    if (eyeSelectionRow) {
       if (medData.type === 'eye_drop' || medData.type === 'eye_ointment') {
-        eyeSelection.style.display = 'flex';
-        // Show the label
-        if (eyeSelectionLabel) {
-          eyeSelectionLabel.style.display = 'block';
+        eyeSelectionRow.style.display = 'flex';
+        // Default to "both" eyes for eye medications
+        if (!state.selectedEye) {
+          selectEye('both');
         }
       } else {
-        eyeSelection.style.display = 'none';
-        // Hide the label
-        if (eyeSelectionLabel) {
-          eyeSelectionLabel.style.display = 'none';
-        }
+        eyeSelectionRow.style.display = 'none';
+        // Clear eye selection for non-eye medications
+        state.selectedEye = null;
+        const eyeButtons = document.querySelectorAll('.eye-btn');
+        eyeButtons.forEach(btn => btn.classList.remove('selected'));
       }
     }
   } else {
     // No CSV data found, hide eye selection by default
-    const eyeSelection = document.querySelector('.eye-selection');
-    const eyeSelectionLabel = document.querySelector('label[for="eye-selection"], label:has(+ .eye-selection)');
-    
-    if (eyeSelection) {
-      eyeSelection.style.display = 'none';
-    }
-    // Hide the label
-    if (eyeSelectionLabel) {
-      eyeSelectionLabel.style.display = 'none';
+    const eyeSelectionRow = $('#eyeSelectionRow');
+    if (eyeSelectionRow) {
+      eyeSelectionRow.style.display = 'none';
     }
   }
 }
@@ -593,18 +651,23 @@ function getDirectionsFromForm() {
   }
   
   // Translate the directions based on selected language
-  const translatedDirections = translateDirections(directions.trim(), state.selectedLanguage);
+  const contentLang = getContentLanguage(state.selectedLanguage);
+  const translatedDirections = translateDirections(directions.trim(), contentLang);
   return translatedDirections;
 }
 
 function selectEye(eye) {
-  state.selectedEye = eye;
+  // Only change selection if clicking a different option
+  // If clicking the same button, do nothing (prevent unselecting)
+  if (state.selectedEye !== eye) {
+    state.selectedEye = eye;
+  }
   
   // Update button visual states
   const eyeButtons = document.querySelectorAll('.eye-btn');
   eyeButtons.forEach(btn => {
     btn.classList.remove('selected');
-    if (btn.dataset.eye === eye) {
+    if (btn.dataset.eye === state.selectedEye) {
       btn.classList.add('selected');
     }
   });
@@ -619,19 +682,125 @@ function getEyeText(eye) {
   }
 }
 
+function updateProtocolButtons() {
+  const protocolButtons = document.querySelectorAll('.protocol-btn');
+  protocolButtons.forEach(btn => {
+    const protocolId = btn.dataset.protocol;
+    if (state.selectedProtocol === protocolId) {
+      btn.classList.add('selected');
+    } else {
+      btn.classList.remove('selected');
+    }
+  });
+  updateAddButtonState();
+}
+
+function updateAddButtonState() {
+  const addBtn = $('#addMedBtn');
+  if (!addBtn) return;
+  
+  // Add primary class if medication or protocol is selected
+  if (state.selected || state.selectedProtocol) {
+    addBtn.classList.add('primary');
+  } else {
+    addBtn.classList.remove('primary');
+  }
+}
+
 
 
 function addMedicationToPlan() {
+  // If a protocol is selected, add all medications from the protocol
+  if (state.selectedProtocol) {
+    const protocol = protocols[state.selectedProtocol];
+    if (!protocol) return;
+    
+    let addedCount = 0;
+    protocol.medications.forEach(medName => {
+      // Find the medication in the meds list
+      const med = state.meds.find(m => m.name === medName);
+      if (!med) {
+        console.warn(`Medication "${medName}" not found in medications list`);
+        return;
+      }
+      
+      // Get medication data from CSV
+      const medData = state.medicationData[medName];
+      const sideEffects = medData ? medData.sideEffects : '';
+      
+      // Get default directions from CSV or use a default
+      let directions = '';
+      const contentLang = getContentLanguage(state.selectedLanguage);
+      if (medData && medData.defaultDirections) {
+        // Translate the abbreviation to full text in the selected language
+        const abbreviation = medData.defaultDirections.trim();
+        directions = translateDirections(abbreviation, contentLang);
+        // Ensure we got a translated value, not the abbreviation back
+        if (!directions || directions === abbreviation) {
+          // If translation failed, try again with uppercase
+          directions = translateDirections(abbreviation.toUpperCase(), contentLang);
+        }
+      } else {
+        // Use a default direction based on medication type
+        if (medData && (medData.type === 'eye_drop' || medData.type === 'eye_ointment')) {
+          directions = translateDirections('QID', contentLang);
+        }
+      }
+      
+      // Ensure directions are not empty - if still empty, use a default
+      if (!directions && medData && (medData.type === 'eye_drop' || medData.type === 'eye_ointment')) {
+        directions = translateDirections('QID', contentLang);
+      }
+      
+      // Final check - if directions is still empty or just the abbreviation, use a fallback
+      if (!directions || (medData && medData.defaultDirections && directions.toUpperCase() === medData.defaultDirections.toUpperCase())) {
+        directions = translateDirections(medData?.defaultDirections || 'QID', contentLang);
+      }
+      
+      // Determine eye selection for eye medications
+      let selectedEye = null;
+      if (medData && (medData.type === 'eye_drop' || medData.type === 'eye_ointment')) {
+        selectedEye = 'both'; // Default to both eyes for protocol medications
+      }
+      
+      const medication = {
+        id: Date.now() + addedCount, // Unique ID with offset
+        name: med.name,
+        image: med.image,
+        directions: directions,
+        selectedEye: selectedEye,
+        sideEffects: sideEffects,
+        // Store original form data for re-translation
+        originalDose: null,
+        originalFrequency: medData && medData.defaultDirections ? medData.defaultDirections : null,
+        originalCustomHours: null,
+        originalOtherDirections: null
+      };
+      
+      state.treatmentPlan.push(medication);
+      addedCount++;
+    });
+    
+    // Clear protocol selection after adding
+    state.selectedProtocol = null;
+    updateProtocolButtons();
+    updateAddButtonState();
+    updateTreatmentPlanList();
+    updateHandoutDisplay();
+    persist();
+    return;
+  }
+  
+  // Original single medication logic
   if (!state.selected) {
     alert('Please select a medication first.');
     return;
   }
 
   const directions = getDirectionsFromForm();
-  const notes = $('#notes').value.trim();
 
-  if (!directions && !notes) {
-    alert('Please add at least directions or notes before adding the medication.');
+  if (!directions) {
+    alert('Please add directions before adding the medication.');
     return;
   }
 
@@ -644,7 +813,6 @@ function addMedicationToPlan() {
     name: state.selected.name,
     image: state.selected.image,
     directions: directions,
-    notes: notes,
     selectedEye: state.selectedEye,
     sideEffects: sideEffects,
     // Store original form data for re-translation
@@ -655,14 +823,17 @@ function addMedicationToPlan() {
   };
 
   state.treatmentPlan.push(medication);
-  updateHandoutDisplay();
+  updateTreatmentPlanList();
+  updateHandoutDisplay(); // Still needed for print layout
   clearMedicationForm();
+  updateAddButtonState();
   persist();
 }
 
 function removeMedicationFromPlan(id) {
   state.treatmentPlan = state.treatmentPlan.filter(med => med.id !== id);
-  updateHandoutDisplay();
+  updateTreatmentPlanList();
+  updateHandoutDisplay(); // Still needed for print layout
   persist();
 }
 
@@ -704,7 +875,8 @@ function toggleEyeSelection(medicationId, eye) {
   medication.selectedEye = newEyeSelection;
   
   // Update the display and save
-  updateHandoutDisplay();
+  updateTreatmentPlanList();
+  updateHandoutDisplay(); // Still needed for print layout
   persist();
 }
 
@@ -727,39 +899,95 @@ function updateTreatmentPlanDisplay() {
         <div class="med-card-content">
           ${med.directions ? `<div><strong>Directions:</strong> ${med.directions}</div>` : ''}
           ${med.instructions ? `<div><strong>Instructions:</strong> ${med.instructions}</div>` : ''}
-          ${med.notes ? `<div><strong>Notes:</strong> ${med.notes}</div>` : ''}
         </div>
       </div>
     `).join('');
   }
 }
 
-async function updateHandoutDisplay() {
-  const container = $('#handoutContent');
+function updateTreatmentPlanList() {
+  const container = $('#treatmentPlanList');
   
-  if (state.treatmentPlan.length === 0) {
-    container.innerHTML = '<div class="empty-handout"><p>Add medications to see your treatment plan here.</p></div>';
-    return;
-  }
+  if (!container) return;
+  
+  const medicationsHTML = state.treatmentPlan.length === 0 
+    ? '<div class="empty-state">No medications added yet.</div>'
+    : state.treatmentPlan.map(med => {
+        // Check if this is an eye medication
+        const medData = state.medicationData[med.name];
+        const isEyeMedication = medData && (medData.type === 'eye_drop' || medData.type === 'eye_ointment');
+        
+        return `
+          <div class="treatment-plan-item">
+            <div class="treatment-plan-name">${med.name}</div>
+            ${isEyeMedication ? `
+            <div class="treatment-plan-eyes">
+              <span class="eye-letter ${med.selectedEye === 'right' || med.selectedEye === 'both' ? 'circled' : ''}" 
+                    onclick="toggleEyeSelection(${med.id}, 'right')" 
+                    title="Right eye"
+                    data-med-id="${med.id}"
+                    data-eye="right">R</span>
+              <span class="eye-letter ${med.selectedEye === 'left' || med.selectedEye === 'both' ? 'circled' : ''}" 
+                    onclick="toggleEyeSelection(${med.id}, 'left')" 
+                    title="Left eye"
+                    data-med-id="${med.id}"
+                    data-eye="left">L</span>
+            </div>
+            ` : ''}
+            <button class="treatment-plan-remove" onclick="removeMedicationFromPlan(${med.id})" title="Remove">×</button>
+          </div>
+        `;
+      }).join('');
+  
+  // Only include the buttons if there are medications
+  const buttonsHTML = state.treatmentPlan.length > 0 ? `
+    <div class="actions">
+      <button id="clearBtn" type="button" onclick="clearAll()">Clear All</button>
+      <button id="printBtn" type="button" class="primary" onclick="handlePrint()">Print Treatment Plan</button>
+    </div>
+  ` : '';
+  
+  container.innerHTML = medicationsHTML + buttonsHTML;
+}
 
-  // Show loading indicator if translating notes
-  if (state.selectedLanguage !== 'english') {
-    container.innerHTML = '<div class="loading">Translating...</div>';
+// Helper function to get content language (for numeric mode, use 'simple' for content)
+function getContentLanguage(language) {
+  if (language === 'numeric') {
+    return 'simple';
+  }
+  return language;
+}
+
+// Helper function to generate medication HTML
+async function generateMedicationHTML(med) {
+  // Get the content language (numeric modes use 'simple' for content)
+  const contentLang = getContentLanguage(state.selectedLanguage);
+  
+  // Reconstruct directions from original form data and translate
+  // For protocol medications (originalDose is null), we need to translate from originalFrequency
+  // For manually added medications, reconstruct and translate
+  let translatedDirections;
+  if (med.originalDose !== undefined && med.originalDose !== null) {
+    // Manually added medication - reconstruct from form data
+    translatedDirections = reconstructDirectionsFromOriginal(med, contentLang);
+  } else if (med.originalFrequency) {
+    // Protocol medication - translate from the stored abbreviation
+    translatedDirections = translateDirections(med.originalFrequency, contentLang);
+  } else if (med.directions) {
+    // Fallback: use stored directions if originalFrequency is missing
+    // But check if it's still an abbreviation and translate it
+    const upperDir = med.directions.toUpperCase().trim();
+    const abbreviations = ['QD', 'BID', 'TID', 'QID', 'QHS', 'Q2H', 'Q3H', 'Q4H', 'Q8H'];
+    if (abbreviations.includes(upperDir)) {
+      translatedDirections = translateDirections(med.directions, contentLang);
+    } else {
+      translatedDirections = med.directions;
+    }
+  } else {
+    translatedDirections = '';
   }
   
-  // Process each medication with async translation
-  const medicationHTMLs = await Promise.all(state.treatmentPlan.map(async med => {
-    // Reconstruct directions from original form data and translate
-    const translatedDirections = med.originalDose !== undefined ? 
-      reconstructDirectionsFromOriginal(med, state.selectedLanguage) : 
-      med.directions;
-    
-    // Translate notes with AI if needed
-    const translatedNotes = med.notes ? 
-      await translateNotesWithAI(med.notes, state.selectedLanguage) : 
-      '';
-    
-    return `
+  return `
     <div class="handout-medication">
       <div class="handout-header">
         <img src="${med.image}" alt="${med.name}" />
@@ -768,15 +996,8 @@ async function updateHandoutDisplay() {
           
           ${translatedDirections ? `
             <div class="handout-block">
-              <div class="block-title">Directions:</div>
+              <div class="block-title directions-title">${translateText('directions', getContentLanguage(state.selectedLanguage))}:</div>
               <div class="block-body">${translatedDirections}</div>
-            </div>
-          ` : ''}
-          
-          ${translatedNotes ? `
-            <div class="handout-block">
-              <div class="block-title">Notes:</div>
-              <div class="block-body">${translatedNotes}</div>
             </div>
           ` : ''}
         </div>
@@ -803,20 +1024,155 @@ async function updateHandoutDisplay() {
       </div>
     </div>
     `;
-  }));
+}
+
+async function updateHandoutDisplay() {
+  const container = $('#handoutContent');
   
-  container.innerHTML = medicationHTMLs.join('');
+  if (state.treatmentPlan.length === 0) {
+    container.innerHTML = '<div class="empty-handout"><p>Add medications to see your treatment plan here.</p></div>';
+    return;
+  }
+
+  // Show loading indicator if translating
+  if (state.selectedLanguage !== 'english') {
+    container.innerHTML = '<div class="loading">Translating...</div>';
+  }
+  
+  // Process each medication with async translation
+  const medicationHTMLs = await Promise.all(state.treatmentPlan.map(med => generateMedicationHTML(med)));
+  
+  // Organize medications by eye for print layout
+  // Default: all medications go to both sides unless they're eye medications with specific eye selection
+  const leftMeds = [];
+  const rightMeds = [];
+  
+  // Process each medication
+  state.treatmentPlan.forEach((med, index) => {
+    const html = medicationHTMLs[index];
+    const medData = state.medicationData[med.name];
+    const isEyeMedication = medData && (medData.type === 'eye_drop' || medData.type === 'eye_ointment');
+    
+    // If it's an eye medication with specific selection
+    if (isEyeMedication && med.selectedEye) {
+      if (med.selectedEye === 'left' || med.selectedEye === 'both') {
+        leftMeds.push(html);
+      }
+      if (med.selectedEye === 'right' || med.selectedEye === 'both') {
+        rightMeds.push(html);
+      }
+    } else {
+      // For non-eye medications OR eye medications without selection, add to both sides
+      leftMeds.push(html);
+      rightMeds.push(html);
+    }
+  });
+  
+  // Build the HTML structure
+  // Screen view: normal list
+  // Print view: split left/right
+  const screenView = medicationHTMLs.join('');
+  
+  // Build content for each side
+  const leftContent = leftMeds.join('');
+  const rightContent = rightMeds.join('');
+  
+  // Debug: Log to console with more details
+  console.log('Print layout debug:', {
+    totalMeds: state.treatmentPlan.length,
+    leftMeds: leftMeds.length,
+    rightMeds: rightMeds.length,
+    leftContentLength: leftContent.length,
+    rightContentLength: rightContent.length,
+    leftContentPreview: leftContent.substring(0, 200),
+    rightContentPreview: rightContent.substring(0, 200),
+    medications: state.treatmentPlan.map(m => ({ name: m.name, selectedEye: m.selectedEye }))
+  });
+  
+  // Ensure we have content - if empty, show a message
+  const leftDisplay = leftContent.trim() || '<p style="color: #999; font-style: italic; padding: 20px;">No medications for left eye</p>';
+  const rightDisplay = rightContent.trim() || '<p style="color: #999; font-style: italic; padding: 20px;">No medications for right eye</p>';
+  
+  // Translate the LEFT and RIGHT headings
+  // For Numeric mode, use the separate numericHeadingLanguage for headings
+  let headingLanguage = state.selectedLanguage;
+  let contentLanguage = state.selectedLanguage;
+  
+  if (headingLanguage === 'numeric') {
+    headingLanguage = state.numericHeadingLanguage || 'english'; // Use selected heading language
+    contentLanguage = 'simple'; // Content uses simple (numbers)
+  }
+  
+  let leftTranslated = translateText('left', headingLanguage);
+  let rightTranslated = translateText('right', headingLanguage);
+  
+  // If translation didn't work, check if translations are loaded
+  if (leftTranslated === 'left' && headingLanguage !== 'english') {
+    // Fallback: use direct lookup
+    const leftTrans = state.translations['left'];
+    if (leftTrans) {
+      leftTranslated = leftTrans[headingLanguage] || 'left';
+    }
+  }
+  if (rightTranslated === 'right' && headingLanguage !== 'english') {
+    // Fallback: use direct lookup
+    const rightTrans = state.translations['right'];
+    if (rightTrans) {
+      rightTranslated = rightTrans[headingLanguage] || 'right';
+    }
+  }
+  
+  // For Chinese, don't uppercase. For others, uppercase.
+  const leftHeading = (headingLanguage === 'chinese') 
+    ? leftTranslated 
+    : leftTranslated.toUpperCase();
+  const rightHeading = (headingLanguage === 'chinese') 
+    ? rightTranslated 
+    : rightTranslated.toUpperCase();
+  
+  const printView = `
+    <div class="print-layout">
+      <div class="print-left">
+        <h2 class="print-eye-heading">${leftHeading}</h2>
+        <div class="print-medications">
+          ${leftDisplay}
+        </div>
+      </div>
+      <div class="print-right">
+        <h2 class="print-eye-heading">${rightHeading}</h2>
+        <div class="print-medications">
+          ${rightDisplay}
+        </div>
+      </div>
+    </div>
+  `;
+  
+  // Combine screen and print views
+  container.innerHTML = `
+    <div class="screen-view">${screenView}</div>
+    ${printView}
+  `;
+  
+  // Additional debug: Check if print layout exists in DOM
+  setTimeout(() => {
+    const printLayout = document.querySelector('.print-layout');
+    const printLeft = document.querySelector('.print-left .print-medications');
+    const printRight = document.querySelector('.print-right .print-medications');
+    console.log('DOM check:', {
+      printLayoutExists: !!printLayout,
+      printLeftExists: !!printLeft,
+      printRightExists: !!printRight,
+      printLeftInnerHTML: printLeft?.innerHTML?.substring(0, 200),
+      printRightInnerHTML: printRight?.innerHTML?.substring(0, 200)
+    });
+  }, 100);
 }
 
 function clearMedicationForm() {
   const medSearchEl = $('#medSearch');
-  const notesEl = $('#notes');
 
   if (medSearchEl) {
     medSearchEl.value = '';
-  }
-  if (notesEl) {
-    notesEl.value = '';
   }
   
   // Clear visual selection in medication list
@@ -829,28 +1185,27 @@ function clearMedicationForm() {
   clearFormFields();
   
   // Hide eye selection by default
-  const eyeSelection = document.querySelector('.eye-selection');
-  const eyeSelectionLabel = document.querySelector('label[for="eye-selection"], label:has(+ .eye-selection)');
-  
-  if (eyeSelection) {
-    eyeSelection.style.display = 'none';
-  }
-  // Hide the label
-  if (eyeSelectionLabel) {
-    eyeSelectionLabel.style.display = 'none';
+  const eyeSelectionRow = $('#eyeSelectionRow');
+  if (eyeSelectionRow) {
+    eyeSelectionRow.style.display = 'none';
   }
   
   updateSelection(null);
+  updateAddButtonState();
 }
 
 function clearAll() {
   state.treatmentPlan = [];
+  updateTreatmentPlanList();
   updateHandoutDisplay();
   clearMedicationForm();
   try {
     localStorage.removeItem('handoutDraft');
   } catch {}
 }
+
+// Make clearAll globally accessible for inline onclick handlers
+window.clearAll = clearAll;
 
 function persist() {
   const payload = {
@@ -868,6 +1223,7 @@ function restore() {
     const d = JSON.parse(raw);
     if (d.treatmentPlan && Array.isArray(d.treatmentPlan)) {
       state.treatmentPlan = d.treatmentPlan;
+      updateTreatmentPlanList();
       updateHandoutDisplay();
     }
   } catch {}
@@ -897,19 +1253,51 @@ function bind() {
     });
   }
   
+  // Protocol buttons
+  const protocolButtons = document.querySelectorAll('.protocol-btn');
+  protocolButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const protocolId = btn.dataset.protocol;
+      if (state.selectedProtocol === protocolId) {
+        // Deselect if clicking the same protocol
+        state.selectedProtocol = null;
+      } else {
+        state.selectedProtocol = protocolId;
+        // Clear single medication selection when protocol is selected
+        state.selected = null;
+        updateSelection(null);
+      }
+      updateProtocolButtons();
+      updateAddButtonState();
+    });
+  });
+  
+  // Initialize protocol buttons
+  updateProtocolButtons();
+  // Initialize add button state
+  updateAddButtonState();
+  
   const clearBtn = $('#clearBtn');
   if (clearBtn) {
     clearBtn.addEventListener('click', clearAll);
   }
 
+  const clearHandoutBtn = $('#clearHandoutBtn');
+  if (clearHandoutBtn) {
+    clearHandoutBtn.addEventListener('click', clearAll);
+  }
+
+  // Make handlePrint globally accessible for inline onclick
+  window.handlePrint = function() {
+    if (state.treatmentPlan.length === 0) {
+      if (!confirm('No medications in treatment plan. Print anyway?')) return;
+    }
+    window.print();
+  };
+  
   const printBtn = $('#printBtn');
   if (printBtn) {
-    printBtn.addEventListener('click', () => {
-      if (state.treatmentPlan.length === 0) {
-        if (!confirm('No medications in treatment plan. Print anyway?')) return;
-      }
-      window.print();
-    });
+    printBtn.addEventListener('click', window.handlePrint);
   }
   
   // Add event listeners for eye selection buttons
@@ -928,10 +1316,52 @@ function bind() {
   
   // Language selector
   const languageSelect = $('#languageSelect');
+  const numericLanguageSelect = $('#numericLanguageSelect');
+  const numericLanguageLabel = $('#numericLanguageLabel');
+  
+  // Initialize numeric language selector state
+  const updateNumericSelectorState = () => {
+    if (state.selectedLanguage === 'numeric') {
+      if (numericLanguageSelect) {
+        numericLanguageSelect.disabled = false;
+        numericLanguageSelect.style.opacity = '1';
+      }
+      if (numericLanguageLabel) {
+        numericLanguageLabel.style.opacity = '1';
+        numericLanguageLabel.style.pointerEvents = 'auto';
+      }
+    } else {
+      if (numericLanguageSelect) {
+        numericLanguageSelect.disabled = true;
+        numericLanguageSelect.style.opacity = '0.5';
+      }
+      if (numericLanguageLabel) {
+        numericLanguageLabel.style.opacity = '0.5';
+        numericLanguageLabel.style.pointerEvents = 'none';
+      }
+    }
+  };
+  
+  // Set initial state
+  updateNumericSelectorState();
+  
   if (languageSelect) {
     languageSelect.addEventListener('change', async (e) => {
       state.selectedLanguage = e.target.value;
+      
+      // Enable/disable numeric language selector based on selection
+      updateNumericSelectorState();
+      
       // Update existing treatment plan with new language (including AI translation)
+      await updateHandoutDisplay();
+    });
+  }
+  
+  // Numeric heading language selector
+  if (numericLanguageSelect) {
+    numericLanguageSelect.addEventListener('change', async (e) => {
+      state.numericHeadingLanguage = e.target.value;
+      // Update existing treatment plan with new heading language
       await updateHandoutDisplay();
     });
   }
@@ -950,6 +1380,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     loadTranslations()
   ]);
   restore();
+  // Initialize treatment plan list display (to ensure buttons are hidden if empty)
+  updateTreatmentPlanList();
 });
 
 
